@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        container: ["julienpeloton/fink-ci:prod", "julienpeloton/fink-ci:dev"]
+        container: ["julienpeloton/fink-ci:dev"]
 
     container:
       image: ${{ matrix.container }}
@@ -42,8 +42,5 @@ jobs:
 
     - name: Run test suites
       run: |
-        pip uninstall -y actsnfink
-        pip install git+https://github.com/emilleishida/fink_sn_activelearning.git@bf8d4e263e02d42781642f872f7bc030c24792bc#egg=actsnfink
-
         ./run_tests.sh
         curl -s https://codecov.io/bash | bash
