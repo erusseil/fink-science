@@ -726,15 +726,6 @@ def ang2pix(ra: pd.Series, dec: pd.Series, nside: pd.Series) -> pd.Series:
 def ang2pix_neighbours(ra: pd.Series, dec: pd.Series, nside: pd.Series) -> pd.Series:
     """Compute the HEALPix pixel for coordinates, plus its (up to 8) neighbouring pixels.
 
-    Notes
-    -----
-    Used to build a coarse candidate-pixel set around each alert before
-    joining against a static catalog indexed by `ang2pix` at the same
-    nside: a galaxy sharing, or immediately neighbouring, an alert's pixel
-    is a candidate; anything else cannot possibly be within a reasonable
-    crossmatch radius and is never considered. See `xmatch_regalade` for
-    how this is used.
-
     Parameters
     ----------
     ra: pd.Series of float
@@ -786,24 +777,12 @@ def xmatch_regalade(
     For each alert, finds the REGALADE galaxy whose directional light
     radius (DLR) ellipse (semi-major axis R1, semi-minor R2, position
     angle PA, scaled by `dlr_factor`) contains the alert, and keeps the
-    closest one (smallest normalized ellipse separation). The separation
-    is computed via a gnomonic (tangent-plane) projection centered on each
-    candidate galaxy -- the same projection astropy's
-    `SkyCoord.spherical_offsets_to` uses, reimplemented here since Spark
-    has no native spherical-geometry support. Unlike the other crossmatch
-    functions in this module, this is a genuine Spark DataFrame join
-    (stream-static), not a `pandas_udf`.
+    closest one. Unlike the other crossmatch functions in this module,
+    this is a genuine Spark DataFrame join (stream-static), not a
+    `pandas_udf`.
 
-    Candidates are narrowed via a HEALPix pixel index (`nside`,
-    ~13.4 arcmin pixels at the default 256): an alert can only match a
-    galaxy sharing, or immediately neighbouring, its pixel
-    (`ang2pix_neighbours`). Verified empirically safe up to ~500 arcsec of
-    separation, covering all but ~24 of REGALADE's ~56 million galaxies
-    (the most extreme outliers, R1 above ~600 arcsec, may occasionally be
-    missed -- accepted as negligible).
-
-    `regalade_df` must already have a `pix` column, computed once (not per
-    micro-batch) when REGALADE is loaded, at `nside`, e.g.:
+    `regalade_df` must already have a `pix` column, computed once at
+    `nside`, e.g.:
     `regalade_df.withColumn("pix", ang2pix(F.col("gal_ra"), F.col("gal_dec"), F.lit(nside)))`.
 
     Parameters
